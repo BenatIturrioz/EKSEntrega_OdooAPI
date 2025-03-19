@@ -1,8 +1,8 @@
 <?php
-$host = "localhost";  // O tu IP/host
-$dbname = "erronka1";   // Nombre de la base de datos
-$username = "root"; // Tu usuario de base de datos
-$password = "1WMG2023"; // Tu contraseña de base de datos
+$host = "localhost";  
+$dbname = "erronka1";   
+$username = "root"; 
+$password = "1WMG2023"; 
 
 // Conectar a la base de datos
 try {
