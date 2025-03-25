@@ -67,6 +67,86 @@ $stmt4->execute();
 $erreserbak = $stmt4->fetchAll(PDO::FETCH_ASSOC);
 
 
+$query6 = "
+    SELECT 
+    l.id, 
+    l.izena, 
+    l.abizena, 
+    COUNT(e.id) AS total_eskari
+FROM 
+    langilea l
+LEFT JOIN 
+    eskaera e ON e.langilea_id = l.id
+GROUP BY 
+    l.id, l.izena, l.abizena
+LIMIT 0, 1000
+";   
+$stmt6 = $pdo->prepare($query6);
+$stmt6->execute();
+$langileak1 = $stmt6->fetchAll(PDO::FETCH_ASSOC);
+
+$query7 = "
+    SELECT 
+        ep.produktu_izena, 
+        SUM(ep.produktuaKop) AS total_eskari
+    FROM 
+        eskaeraproduktua ep
+    LEFT JOIN 
+        eskaera e ON e.id = ep.erreserba_id
+    GROUP BY 
+        ep.produktu_izena
+";   
+$stmt7 = $pdo->prepare($query7);
+$stmt7->execute();
+$produktuak1 = $stmt7->fetchAll(PDO::FETCH_ASSOC);
+
+$query8 = "
+    SELECT 
+        DAYOFWEEK(e.data) AS dia_semana, 
+        COUNT(e.id) AS total_eskari
+    FROM 
+        eskaera e
+    GROUP BY 
+        dia_semana
+    ORDER BY 
+        dia_semana
+";   
+$stmt8 = $pdo->prepare($query8);
+$stmt8->execute();
+$dia_semana_eskari = $stmt8->fetchAll(PDO::FETCH_ASSOC);
+
+$query9 = "
+    SELECT 
+    DAYOFWEEK(e.data) AS dia_semana, 
+    SUM(e.prezioTotala) AS total_factura
+FROM 
+    eskaera e
+GROUP BY 
+    dia_semana
+ORDER BY 
+    dia_semana
+";   
+$stmt9 = $pdo->prepare($query9);
+$stmt9->execute();
+$dia_semana_factura = $stmt9->fetch(PDO::FETCH_ASSOC);
+
+
+$query10 = "
+    SELECT 
+        DAY(e.data) AS dia_mes, 
+        COUNT(e.id) AS total_eskari
+    FROM 
+        eskaera e
+    GROUP BY 
+        dia_mes
+    ORDER BY 
+        total_eskari DESC
+    LIMIT 1
+";   
+$stmt10 = $pdo->prepare($query10);
+$stmt10->execute();
+$dia_mes_eskari = $stmt10->fetch(PDO::FETCH_ASSOC);
+
 // Crear el XML
 $xml = new SimpleXMLElement('<data/>');
 
@@ -114,6 +194,37 @@ foreach ($erreserbak as $erreserba){
     $item->addChild('data', $erreserba['data']);
     $item->addChild('bezeroKop', $erreserba['bezeroKop']);
 }
+
+$langileak1XML = $xml->addChild('langileak1');
+foreach ($langileak1 as $langilea1) {
+    $item = $langileak1XML->addChild('langilea1');
+    $item->addChild('id', $langilea1['id']);
+    $item->addChild('izena', $langilea1['izena']);
+    $item->addChild('abizena', $langilea1['abizena']);
+    $item->addChild('total_eskari', $langilea1['total_eskari']);
+}
+
+$produktuak1XML = $xml->addChild('produktuak1');
+foreach ($produktuak1 as $produktua1) {
+    $item = $produktuak1XML->addChild('produktua');
+    $item->addChild('produktu_izena', $produktua1['produktu_izena']);
+    $item->addChild('total_eskari', $produktua1['total_eskari']);
+}
+
+if (!empty($dia_semana_eskari)) {
+    $dia_semana_eskariXML = $xml->addChild('dia_semana_eskari');
+    $dia_semana_eskariXML->addChild('dia_semana', $dia_semana_eskari[0]['dia_semana']);
+    $dia_semana_eskariXML->addChild('total_eskari', $dia_semana_eskari[0]['total_eskari']);
+}
+
+$dia_semana_facturaXML = $xml->addChild('dia_semana_factura');
+$dia_semana_facturaXML->addChild('dia_semana', $dia_semana_factura['dia_semana']);
+$dia_semana_facturaXML->addChild('total_factura', $dia_semana_factura['total_factura']);
+
+
+$dia_mes_eskariXML = $xml->addChild('dia_mes_eskari');
+$dia_mes_eskariXML->addChild('dia_mes', $dia_mes_eskari['dia_mes']);
+$dia_mes_eskariXML->addChild('total_eskari', $dia_mes_eskari['total_eskari']);
 
 
 echo $xml->asXML();
